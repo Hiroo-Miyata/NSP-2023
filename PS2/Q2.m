@@ -1,0 +1,221 @@
+clear all; close all;
+% we will consider a simulated neuron that has a cosine tuning curve described in equation 1
+% 1: f(s) = r_0 + (r_max - r_0) * cos(s - s_max)
+% where f is the firing rate (in spikes per second), s is the reaching angle of the arm
+% s_max is the reaching angle associated with the maximum response r_max, and r_0 is the baseline firing rate
+% and r_0 is an offset that shifts the tuning curve up from the zero axis.
+% Let r_0 = 30, r_max = 50, and s_max = pi / 2
+
+r_0 = 30;
+r_max = 50;
+s_max = pi / 2;
+tc = @(s) r_0 + (r_max - r_0) * cos(s - s_max);
+
+% (a) for each of the following reaching angles (s = k * pi / 4, k = 0, 1, 2, 3, 4, 5, 6, 7),
+% generate 100 spike trains according to a homogeneous Poisson process.
+% Each spike train should have a duration of 1 second.
+% Plot 5 spike train for each reaching angle.
+% so use 3 * 3 subplots
+% each subplot is a raster plot with y-axis: the index of spike train (1 ~ 5) x-axis: time 
+
+s = [0, 1, 2, 3, 4, 5, 6, 7] * pi / 4;
+positions = [6, 3, 2, 1, 4, 7, 8, 9];
+spikes = cell(1, 8);
+
+figure;
+for i = 1:8
+    subplot(3, 3, positions(i))
+    spikes{i} = zeros(100, 1000);
+    for j = 1:100
+        spikeN = poissrnd(tc(s(i)));
+        % generate spike times
+        spikeTimes = rand(1, spikeN);
+        % convert to spike indices
+        spikeIndices = ceil(spikeTimes * 1000);
+        spikes{i}(j, spikeIndices) = 1;
+    end
+
+    for j = 1:5
+        X = find(spikes{i}(j, :));
+        scatter(X, j * ones(1, length(X)), 'k.')
+        hold on
+    end
+
+    % remove the ticks
+    set(gca, 'YTick', []);
+    ylim([0.5 5.5]);
+    if i == 8
+        xlabel("Time (msec)")
+    end
+end
+subplot(3, 3, 5);
+axis off;
+I = imread('arrows-Q2.png', 'BackgroundColor', [1 1 1]);
+imshow(I);
+
+saveas(gcf, './results/2-a.jpg'); close all;
+% (b) for each reaching angle, find the spike histogram by taking spike counts in non-overlapping 20 ms bins.
+% then averaging across the 100 trials.
+% Plot the 8 resulting spike histograms around a circle with the same angles as in part (a).
+% The spike histograms should have firing rate as the venrtical axis and time as the horizontal axis.
+% The bar command in Matlab can be used to plot histograms
+
+spikeCounts20ms = cell(1, 8);
+
+figure;
+for i = 1:8
+    subplot(3, 3, positions(i))
+    spikeCounts20ms{i} = zeros(100, 50);
+    for j = 1:100
+        spikeCounts20ms{i}(j, :) = sum(reshape(spikes{i}(j, :), 20, 50), 1);
+    end
+    X = 10:20:1000;
+    Y = mean(spikeCounts20ms{i}, 1);
+    Y = Y / 20 * 1000;
+    bar(X, Y, 1);
+
+    if i == 8
+        ylabel("f (Hz)")
+        xlabel("Time (msec)")
+    end
+end
+subplot(3, 3, 5);
+axis off;
+I = imread('arrows-Q2.png', 'BackgroundColor', [1 1 1]);
+imshow(I);
+
+saveas(gcf, './results/2-b.jpg'); close all;
+
+% (c) for each trial, count the number of spikes across the entire trial.
+% Plots these points on the axes shown below
+% x-axis: reaching angle from 0 to 360
+% y-axis: firing rate (Hz)
+% There should be 800 points in the plot (but some points may be on top of each other due to the discrete nature of spike counts)
+% For each reaching angle, find the mean firing rate across the 100 trials.
+% Then plot the mean firing rate using a red point
+% Now plot the tuning curve defined in equation 1 of this neuron in green on the same plot.
+
+spikeCounts = zeros(8, 100);
+
+figure;
+for i = 1:8
+    spikeCounts(i, :) = sum(spikes{i}, 2);
+    % plot all spike counts in one figure (x-axis: reaching angle, y-axis: spike counts)
+    % opacity: 0.1
+    scatter(s(i) * 180 / pi * ones(1, 100), spikeCounts(i, :), 20, 'b.', 'MarkerFaceAlpha', 0.1, 'MarkerEdgeAlpha', 0.1);
+    hold on;
+end
+Y = mean(spikeCounts, 2);
+X = s * 180 / pi;
+
+plot(X, Y, 'r.', 'MarkerSize', 20)
+hold on
+plot(X, tc(s), 'g', 'LineWidth', 2)
+xlim([0 360])
+xlabel("S (movement direction in degrees")
+ylabel("f (Hz)")
+saveas(gcf, './results/2-c.jpg'); close all;
+
+% (d) for each reaching angle, plot the normalized distribution (i.e. normalized so that the area under the distribution equals one) 
+% of spike counts (using the same counts from part (c)). Plot the 8 distributions around a circle, as in part (a).
+% Fit a poisson distribution to each empirical distribution and plot it on top of the corresponding empirical distribution.
+% Are the empirical distributions well-fit by Poisson distributions?
+
+figure;
+for i = 1:8
+    subplot(3, 3, positions(i))
+    % plot normalized histogram, y-axis: normalized count
+    histogram(spikeCounts(i, :), 'Normalization', 'probability');
+    hold on
+    x = 0:1:max(spikeCounts(i, :));
+    y = poisspdf(x, tc(s(i)));
+    plot(x, y, 'r', 'LineWidth', 2)
+
+    if i == 8
+        xlabel("Spike Counts")
+        ylabel("Probability")
+    end
+end
+subplot(3, 3, 5);
+axis off;
+I = imread('arrows-Q2.png', 'BackgroundColor', [1 1 1]);
+imshow(I);
+saveas(gcf, './results/2-d.jpg'); close all;
+
+
+% (e) For each reaching angle, find the mean and varianve of the spike counts across the 100 trials
+% (using the same spike count from part (c)).
+% Plot the obtained mean and variance on the axes below.
+% x-axis: mean(spikes)
+% y-axis: variance(spikes^2)
+% There should be 8 points in the plot - one per reaching angle.
+
+figure;
+meanSpikeCounts = zeros(1, 8);
+varSpikeCounts = zeros(1, 8);
+for i = 1:8
+    meanSpikeCounts(i) = mean(spikeCounts(i, :));
+    varSpikeCounts(i) = var(spikeCounts(i, :));
+end
+scatter(meanSpikeCounts, varSpikeCounts, 50, "k", "filled");
+hold on;
+xlabel("mean (spikes)")
+ylabel("variance (spikes^2)")
+axis equal
+% add x = y line
+x = 0:1:max(meanSpikeCounts);
+plot(x, x, 'r', 'LineWidth', 2);
+saveas(gcf, './results/2-e.jpg'); close all;
+
+
+% (f) For each reaching angle, plot the normalized distribution of ISIs
+% Plot the 8 districutions around a circle, as in part (a).
+% Fit an exponential distribution to each empirical distribution and plot it on top of the corresponding empirical distribution.
+% Are the empirical distributions well-fit by exponential distributions?
+
+figure;
+for i = 1:8
+    subplot(3, 3, positions(i))
+    ISIs = [];
+    for j = 1:100
+        ISIs = [ISIs, diff(find(spikes{i}(j, :)))];
+    end
+    ISIs = ISIs / 1000;
+    histogram(ISIs, 'Normalization', 'pdf')
+    hold on
+    x = 0:0.001:max(ISIs);
+    % y is the pdf of normalized exponential distribution with mean 1/tc(s(i))
+    y = exppdf(x, 1/tc(s(i)));
+    plot(x, y, 'r', 'LineWidth', 2)
+
+    if i == 8
+        xlabel("ISIs (s)")
+        ylabel("Probability Density")
+    end
+end
+subplot(3, 3, 5);
+axis off;
+I = imread('arrows-Q2.png', 'BackgroundColor', [1 1 1]);
+imshow(I);
+saveas(gcf, './results/2-f.jpg'); close all;
+
+% (g) For each reaching angle, find the average ISI and coefficient of variation of ISI.
+% Plot the resulting values on the axes below.
+% x-axis: average ISI (ms)
+% y-axis: coefficient of variation of ISI
+% There should be 8 points in the plot - one per reaching angle.
+figure;
+for i = 1:8
+    ISIs = [];
+    for j = 1:100
+        ISIs = [ISIs, diff(find(spikes{i}(j, :)))];
+    end
+    ISIs = ISIs / 1000;
+    scatter(mean(ISIs), std(ISIs) / mean(ISIs), 50, 'k', 'filled')
+    hold on
+end
+ylim([0 1.1])
+xlim([0 0.1])
+xlabel("mean ISI (s)")
+ylabel("coefficient of variation of ISI")
+saveas(gcf, './results/2-g.jpg'); close all;
