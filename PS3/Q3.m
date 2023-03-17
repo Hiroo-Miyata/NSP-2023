@@ -152,6 +152,65 @@ end
 for m=1:3
     figure;
     hold on;
+    
+    if m == 1
+        % shared covariance matrix
+        % define the probability at x for each class
+        p_x_1 = @(x) parameters{m}{1}(:,1)' * inv(parameters{m}{2}) * x - 0.5 * parameters{m}{1}(:,1)' * inv(parameters{m}{2}) * parameters{m}{1}(:,1);
+        p_x_2 = @(x) parameters{m}{1}(:,2)' * inv(parameters{m}{2}) * x - 0.5 * parameters{m}{1}(:,2)' * inv(parameters{m}{2}) * parameters{m}{1}(:,2);
+        p_x_3 = @(x) parameters{m}{1}(:,3)' * inv(parameters{m}{2}) * x - 0.5 * parameters{m}{1}(:,3)' * inv(parameters{m}{2}) * parameters{m}{1}(:,3);
+    elseif m == 2
+        % individual covariance matrix
+        % define the probability at x for each class
+        p_x_1 = @(x) -0.5 * log(det(parameters{m}{2}{1})) - 0.5 * (x - parameters{m}{1}(:,1))' * inv(parameters{m}{2}{1}) * (x - parameters{m}{1}(:,1));
+        p_x_2 = @(x) -0.5 * log(det(parameters{m}{2}{2})) - 0.5 * (x - parameters{m}{1}(:,2))' * inv(parameters{m}{2}{2}) * (x - parameters{m}{1}(:,2));
+        p_x_3 = @(x) -0.5 * log(det(parameters{m}{2}{3})) - 0.5 * (x - parameters{m}{1}(:,3))' * inv(parameters{m}{2}{3}) * (x - parameters{m}{1}(:,3));
+    else
+        % poisson distribution
+        % define the probability at x for each class
+        p_x_1 = @(x) sum(log(parameters{m}{1}(:,1)) .* x) - sum(parameters{m}{1}(:,1));
+        p_x_2 = @(x) sum(log(parameters{m}{1}(:,2)) .* x) - sum(parameters{m}{1}(:,2));
+        p_x_3 = @(x) sum(log(parameters{m}{1}(:,3)) .* x) - sum(parameters{m}{1}(:,3));
+    end
+    % find the decision boundary
+    [x1, x2] = meshgrid(0:0.1:20, 0:0.1:20);
+    x = [x1(:)'; x2(:)'];
+    p_x = zeros(3, size(x, 2));
+    for i = 1:size(x, 2)
+        p_x(1, i) = p_x_1(x(:, i));
+        p_x(2, i) = p_x_2(x(:, i));
+        p_x(3, i) = p_x_3(x(:, i));
+    end
+    [~, k] = max(p_x);
+    k = reshape(k, size(x1));
+    X1 = cell(1, 3);
+    X2 = cell(1, 3);
+    for i = 1:size(k, 1)
+        for j = 1:size(k, 2)
+            if k(i, j) == 1
+                X1{1} = [X1{1} x1(i, j)];
+                X2{1} = [X2{1} x2(i, j)];
+            elseif k(i, j) == 2
+                X1{2} = [X1{2} x1(i, j)];
+                X2{2} = [X2{2} x2(i, j)];
+            else
+                X1{3} = [X1{3} x1(i, j)];
+                X2{3} = [X2{3} x2(i, j)];
+            end
+        end
+    end
+    
+    for i = 1:3
+        % plot with the opacity = 0.5
+        if i == 1
+            scatter(X1{i}, X2{i}, 10, 'r', 'filled', 'MarkerFaceAlpha', 0.2);
+        elseif i == 2
+            scatter(X1{i}, X2{i}, 10, 'g', 'filled', 'MarkerFaceAlpha', 0.2);
+        else
+            scatter(X1{i}, X2{i}, 10, 'b', 'filled', 'MarkerFaceAlpha', 0.2);
+        end
+    end
+
     for k = 1:nclasses
         for n = 1:ntrials
             if k == 1
@@ -163,35 +222,32 @@ for m=1:3
             end
         end
     end
-    axis([0 20 0 20]);
+
     if m == 1
         % shared covariance matrix
-        % define the probability at x for each class
-        p_x_1 = @(x) parameters{m}{1}(:,1)' * inv(parameters{m}{2}) * x - 0.5 * parameters{m}{1}(:,1)' * inv(parameters{m}{2}) * parameters{m}{1}(:,1);
-        p_x_2 = @(x) parameters{m}{1}(:,2)' * inv(parameters{m}{2}) * x - 0.5 * parameters{m}{1}(:,2)' * inv(parameters{m}{2}) * parameters{m}{1}(:,2);
-        p_x_3 = @(x) parameters{m}{1}(:,3)' * inv(parameters{m}{2}) * x - 0.5 * parameters{m}{1}(:,3)' * inv(parameters{m}{2}) * parameters{m}{1}(:,3);
-    elseif m == 2
-        % individual covariance matrix
-        % define the probability at x for each class
-        p_x_1 = @(x) parameters{m}{1}(:,1)' * inv(parameters{m}{2}{1}) * x - 0.5 * parameters{m}{1}(:,1)' * inv(parameters{m}{2}{1}) * parameters{m}{1}(:,1);
-        p_x_2 = @(x) parameters{m}{1}(:,2)' * inv(parameters{m}{2}{2}) * x - 0.5 * parameters{m}{1}(:,2)' * inv(parameters{m}{2}{2}) * parameters{m}{1}(:,2);
-        p_x_3 = @(x) parameters{m}{1}(:,3)' * inv(parameters{m}{2}{3}) * x - 0.5 * parameters{m}{1}(:,3)' * inv(parameters{m}{2}{3}) * parameters{m}{1}(:,3);
+        for k = 1:nclasses
+            if k == 1
+                plot_ellipse(parameters{m}{1}(:,k), parameters{m}{2}, 'r');
+            elseif k == 2
+                plot_ellipse(parameters{m}{1}(:,k), parameters{m}{2}, 'g');
+            else
+                plot_ellipse(parameters{m}{1}(:,k), parameters{m}{2}, 'b');
+            end
+        end
     else
-        % poisson distribution
-        % define the probability at x for each class
-        p_x_1 = @(x) sum(log(parameters{m}{1}(:,1)) .* x) - sum(parameters{m}{1}(:,1));
-        p_x_2 = @(x) sum(log(parameters{m}{1}(:,2)) .* x) - sum(parameters{m}{1}(:,2));
-        p_x_3 = @(x) sum(log(parameters{m}{1}(:,3)) .* x) - sum(parameters{m}{1}(:,3));
+        % individual covariance matrix
+        for k = 1:nclasses
+            if k == 1
+                plot_ellipse(parameters{m}{1}(:,k), parameters{m}{2}{k}, 'r');
+            elseif k == 2
+                plot_ellipse(parameters{m}{1}(:,k), parameters{m}{2}{k}, 'g');
+            else
+                plot_ellipse(parameters{m}{1}(:,k), parameters{m}{2}{k}, 'b');
+            end
+        end
     end
-    % find the decision boundary
-    [x1, x2] = meshgrid(0:0.1:20, 0:0.1:20);
-    x = [x1(:)'; x2(:)'];
-    p_x = [p_x_1(x); p_x_2(x); p_x_3(x)];
-    [~, k] = max(p_x);  
-    k = reshape(k, size(x1));
-    contour(x1, x2, k, [1.5 2.5], 'r');
-    contour(x1, x2, k, [2.5 3.5], 'g');
-    contour(x1, x2, k, [3.5 4.5], 'b');
+    
+    axis([0 20 0 20]);
 
     hold off;
     saveas(gcf, sprintf('ps3_1e_%d.png', m)); close all;

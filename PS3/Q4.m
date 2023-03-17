@@ -75,9 +75,9 @@ fprintf('Percent of test data points correctly classified: %f \n', correct/(ntes
 % % b.  Repeat part (a) for model which is gaussian distribusion
 % % with individual covariance matrix. You should encounter a Matlab
 % % warning when classifying the test data. Why did the Matlab warning occur?
-
+% 
 % % 1. Compute the mean and covariance matrix for each class
-
+% 
 % mu = zeros(nneurons, nclasses);
 % sigma = zeros(nneurons, nneurons, nclasses);
 % for k = 1:nclasses
@@ -88,14 +88,14 @@ fprintf('Percent of test data points correctly classified: %f \n', correct/(ntes
 %     % compute the covariance matrix
 %     sigma(:,:,k) = cov(spike_counts');
 % end
-
+% 
 % % 2. Compute the probability of each class for each test data point
 % % p(x|C_k) = N(x|mu_k, sigma_k)
 % % p(C_k) = 1/8
-
-% p_x_k = @(x, k) mu(:,k)' * inv(sigma(:,:,k)) * x - 0.5 * mu(:,k)' * inv(sigma(:,:,k)) * mu(:,k);
+% 
+% p_x_k = @(x, k) - (x - mu(:,k))' * inv(squeeze(sigma(:,:,k))) * (x - mu(:,k)) - log(det(squeeze(sigma(:,:,k))));
 % argmaxk = @(x) find([p_x_k(x,1) p_x_k(x,2) p_x_k(x,3) p_x_k(x,4) p_x_k(x,5) p_x_k(x,6) p_x_k(x,7) p_x_k(x,8)] == max([p_x_k(x,1) p_x_k(x,2) p_x_k(x,3) p_x_k(x,4) p_x_k(x,5) p_x_k(x,6) p_x_k(x,7) p_x_k(x,8)]));
-
+% 
 % % 3. Compute the percent of test data points correctly classified
 % correct = 0;
 % for n = 1:ntest
@@ -107,7 +107,7 @@ fprintf('Percent of test data points correctly classified: %f \n', correct/(ntes
 %     end
 % end
 % fprintf('Percent of test data points correctly classified: %f \n', correct/(ntest*nclasses));
-
+% 
 % % the reason of waring is that the covariance matrix can not be inverted
 
 
@@ -123,9 +123,11 @@ for k = 1:nclasses
     lambda(:,k) = squeeze(mean(spike_counts,2));
 end
 
+probability = zeros(nclasses, 1);
+
 % 2. Compute the probability of each class for each test data point
 
-p_x_k = @(x, k) log(lambda(:,k))' * x - sum(lambda(:,k));
+p_x_k = @(x, k) prod(poisspdf(x, lambda(:,k)));
 argmaxk = @(x) find([p_x_k(x,1) p_x_k(x,2) p_x_k(x,3) p_x_k(x,4) p_x_k(x,5) p_x_k(x,6) p_x_k(x,7) p_x_k(x,8)] == max([p_x_k(x,1) p_x_k(x,2) p_x_k(x,3) p_x_k(x,4) p_x_k(x,5) p_x_k(x,6) p_x_k(x,7) p_x_k(x,8)]));
 
 % 3. Compute the percent of test data points correctly classified
