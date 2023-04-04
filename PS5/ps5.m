@@ -121,9 +121,9 @@ saveas(gcf, 'ps5_3a2.png'); close all;
 
 % (b) Plot the objective function J versus iteration number. How many iterations did it take for K-means to converge?
 
-J = zeros(1, 100); % initialize objective function
+J = zeros(1, 20); % initialize objective function
 
-for iter = 1:100
+for iter = 1:length(J)
     % update cluster centers
     for k = 1:K
         mu(:,k) = mean(x(:,label==k), 2);
@@ -205,9 +205,9 @@ saveas(gcf, 'ps5_4a2.png'); close all;
 
 % plot objective function
 
-J = zeros(1, 100); % initialize objective function
+J = zeros(1, 20); % initialize objective function
 
-for iter = 1:100
+for iter = 1:length(J)
     % update cluster centers
     for k = 1:K
         mu2(:,k) = mean(x(:,label==k), 2);
@@ -302,9 +302,9 @@ saveas(gcf, 'ps5_5a3.png'); close all;
 
 % plot objective function
 
-J = zeros(1, 100); % initialize objective function
+J = zeros(1, 20); % initialize objective function
 
-for iter = 1:100
+for iter = 1:length(J)
     % update cluster centers
     for k = 1:K
         mu3(:,k) = mean(x(:,label==k), 2);
@@ -401,9 +401,9 @@ saveas(gcf, 'ps5_5c3.png'); close all;
 
 % plot objective function
 
-J = zeros(1, 100); % initialize objective function
+J = zeros(1, 20); % initialize objective function
 
-for iter = 1:100
+for iter = 1:length(J)
     % update cluster centers
     for k = 1:K
         mu4(:,k) = mean(x(:,label==k), 2);
