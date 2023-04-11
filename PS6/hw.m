@@ -3,18 +3,18 @@ clear all; close all;
 load("ps6_data.mat");
 
 % Initialize the model parameters
-% K = 3;
-% mu = InitParams1.mu;
-% Sigma = repmat(InitParams1.Sigma, 1, 1, K);
-% pi = InitParams1.pi;
-% N = size(Spikes, 2);
+K = 3;
+mu = InitParams1.mu;
+Sigma = repmat(InitParams1.Sigma, 1, 1, K);
+pi = InitParams1.pi;
+N = size(Spikes, 2);
 
 % Initialize the model parameters
-K = 3;
-mu = InitParams2.mu;
-Sigma = repmat(InitParams2.Sigma, 1, 1, K);
-pi = InitParams2.pi;
-N = size(Spikes, 2);
+% K = 3;
+% mu = InitParams2.mu;
+% Sigma = repmat(InitParams2.Sigma, 1, 1, K);
+% pi = InitParams2.pi;
+% N = size(Spikes, 2);
 
 % EM algorithm
 maxIter = 100;
