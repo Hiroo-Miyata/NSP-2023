@@ -39,6 +39,7 @@ for iter = 1:maxIter
         for i = 1:N
             Sigma(:, :, k) = Sigma(:, :, k) + gamma(k, i) * (x_minus_mu(:, i) * x_minus_mu(:, i)');
         end
+        Sigma(:, :, k) = Sigma(:, :, k) / Nk(k);
 
         % Check if the covariance matrix is well-conditioned and invertible
         cond_number = cond(Sigma(:, :, k));
