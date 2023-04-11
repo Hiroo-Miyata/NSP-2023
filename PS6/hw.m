@@ -30,13 +30,16 @@ for iter = 1:maxIter
     log_likelihood(iter) = sum(logsumexp_gamma);
     gamma = exp(log_gamma - logsumexp_gamma);
     
-    % M-step
+    % M-step 
     Nk = sum(gamma, 2);
     for k = 1:K
         mu(:, k) = (Spikes * gamma(k, :)') / Nk(k);
         x_minus_mu = Spikes - mu(:, k);
-        Sigma(:, :, k) = (gamma(k, :) * x_minus_mu * x_minus_mu') / Nk(k);
-    
+        Sigma = zeros(31, 31, K);
+        for i = 1:N
+            Sigma(:, :, k) = Sigma(:, :, k) + gamma(k, i) * (x_minus_mu(:, i) * x_minus_mu(:, i)');
+        end
+
         % Check if the covariance matrix is well-conditioned and invertible
         cond_number = cond(Sigma(:, :, k));
         determinant = det(Sigma(:, :, k));
