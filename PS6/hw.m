@@ -35,7 +35,7 @@ for iter = 1:maxIter
     for k = 1:K
         mu(:, k) = (Spikes * gamma(k, :)') / Nk(k);
         x_minus_mu = Spikes - mu(:, k);
-        Sigma(:, :, k) = (x_minus_mu * diag(gamma(k, :)) * x_minus_mu') / Nk(k);
+        Sigma(:, :, k) = (gamma(k, :) * x_minus_mu * x_minus_mu') / Nk(k);
     
         % Check if the covariance matrix is well-conditioned and invertible
         cond_number = cond(Sigma(:, :, k));
