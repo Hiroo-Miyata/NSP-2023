@@ -32,10 +32,10 @@ for iter = 1:maxIter
     
     % M-step 
     Nk = sum(gamma, 2);
+    Sigma = zeros(31, 31, K);
     for k = 1:K
         mu(:, k) = (Spikes * gamma(k, :)') / Nk(k);
         x_minus_mu = Spikes - mu(:, k);
-        Sigma = zeros(31, 31, K);
         for i = 1:N
             Sigma(:, :, k) = Sigma(:, :, k) + gamma(k, i) * (x_minus_mu(:, i) * x_minus_mu(:, i)');
         end
