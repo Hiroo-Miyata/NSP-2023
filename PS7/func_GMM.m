@@ -26,8 +26,7 @@ ppi   = InitParams.pi;
 K = size(mu, 2);
 [D, N] = size(Spikes);
 
-Sigma = repmat(InitParams.Sigma, 1, 1, K);
-% Sigma = InitParams.Sigma;
+Sigma = InitParams.Sigma;
 
 const = -0.5 * D * log(2*pi);
 

@@ -1,19 +1,22 @@
 close all; clear all;
-%% Load your data
-% Assuming Spikes is a 31x552 matrix
-% Replace 'your_spikes_data.mat' with your actual data file name
 load('ps7_data.mat');
 
-%% (a) Plot the N raw spike snippets in a "voltage vs. time" plot
 figure;
-plot(Spikes);
+plot(Spikes, 'k');
 xlabel('Time');
 ylabel('Voltage (µV)');
 title('Voltage vs. Time for Raw Spike Snippets');
 saveas(gcf, 'ps7_1a.png'); close all;
 
 %% (b) Apply PCA to all N spike snippets and plot the eigenvector waveforms
-[coeff, score, latent] = pca(Spikes.');
+% [coeff, score, latent] = pca(Spikes.');
+centered_data = Spikes - mean(Spikes, 2);
+covariance_matrix = (centered_data * centered_data') / (size(centered_data, 2) - 1);
+[coeff, eigenvalues_matrix] = eig(covariance_matrix);
+[latent, sort_index] = sort(diag(eigenvalues_matrix), 'descend');
+coeff = coeff(:, sort_index);
+score = coeff' * centered_data;
+score = score';
 
 figure;
 plot(coeff(:, 1), 'r');
@@ -21,7 +24,7 @@ hold on;
 plot(coeff(:, 2), 'g');
 plot(coeff(:, 3), 'b');
 xlabel('Time');
-ylabel('Amplitude');
+ylabel('Amplitude (µV)');
 title('Eigenvector Waveforms');
 legend('1st: red', '2nd: green', '3rd: blue');
 saveas(gcf, 'ps7_1b.png'); close all;
@@ -29,9 +32,9 @@ saveas(gcf, 'ps7_1b.png'); close all;
 %% (c) Plot the square-rooted eigenvalue spectrum
 sqrt_eigenvalues = sqrt(latent);
 figure;
-plot(sqrt_eigenvalues, 'o-');
-xlabel('Principal Component');
-ylabel('Square-rooted Eigenvalue');
+plot(sqrt_eigenvalues, 'o', "MarkerSize", 5, 'MarkerEdgeColor', 'k');
+xlabel('Component Number');
+ylabel('Square-rooted Eigenvalue (µV)');
 title('Square-rooted Eigenvalue Spectrum');
 saveas(gcf, 'ps7_1c.png'); close all;
 
@@ -39,9 +42,9 @@ saveas(gcf, 'ps7_1c.png'); close all;
 % (You will need to visually inspect the plot to determine the number of dominant eigenvalues)
 
 %% (d) Create a scatter plot of the PC1 score versus the PC2 score
-score = -1 * score;
+score(:, 1) = -1 * score(:, 1);
 figure;
-scatter(score(:, 1), score(:, 2));
+scatter(score(:, 1), score(:, 2), 5, 'k', 'filled');
 xlabel('PC1 Score');
 ylabel('PC2 Score');
 title('Scatter Plot of PC1 Score vs PC2 Score');
@@ -73,9 +76,6 @@ for K = K_values
         InitParams_new.Sigma = repmat(InitParams.Sigma, 1, 1, K);
         InitParams_new.pi = ones(1, K) / K; 
 
-        % Train GMM using EM
-        % function [mu, Sigma, pi] = GMM(Spikes, InitParams1)
-        % [mu_est, Sigma_est, pi_est, gamma] = GMM(score(train_indices, 1:2)', InitParams_new);
         [mu_est, Sigma_est, pi_est] = func_GMM(InitParams_new, score(train_indices, 1:2)');
         
         % Compute likelihood for the test set
@@ -95,7 +95,7 @@ end
 
 % Plot cross-validated likelihoods versus K
 figure;
-plot(K_values, likelihoods, 'o-');
+plot(K_values, likelihoods, 'o-', "MarkerSize", 5, 'MarkerEdgeColor', 'k');
 xlabel('K');
 ylabel('Cross-validated Likelihood');
 title('Cross-validated Likelihoods vs K');
@@ -108,14 +108,14 @@ saveas(gcf, 'ps7_2a.png'); close all;
 for K = 1:8
     % Train GMM using EM with the first cross-validation fold
     InitParams_new.mu = InitParams.mu(:, 1:K);
-    InitParams_new.sigma = InitParams.Sigma;
+    InitParams_new.sigma = repmat(InitParams.Sigma, 1, 1, K);
     InitParams_new.pi = ones(1, K) / K;
     train_indices = samples_per_fold + 1 : n_samples;
-    [mu_est, Sigma_est, pi_est, gamma] = GMM(score(train_indices, 1:2)', InitParams_new);
+    [mu_est, Sigma_est, pi_est] = func_GMM(InitParams_new, score(train_indices, 1:2)');
     
     % Create plot
     figure;
-    scatter(score(:, 1), score(:, 2));
+    scatter(score(:, 1), score(:, 2), 5, 'k', 'filled');
     xlabel('PC1 Score');
     ylabel('PC2 Score');
     title(sprintf('Scatter Plot and Ellipses for K = %d', K));
@@ -136,17 +136,28 @@ end
 % cross-validation fold.
 
 InitParams_new.mu = InitParams.mu(:, 1:3);
-InitParams_new.sigma = InitParams.Sigma;
+InitParams_new.sigma = repmat(InitParams.Sigma, 1, 1, K);
 InitParams_new.pi = ones(1, 3) / 3;
 train_indices = samples_per_fold + 1 : n_samples;
-[mu_est, Sigma_est, pi_est, gamma] = GMM(score(train_indices, 1:2)', InitParams_new);
+[mu_est, Sigma_est, pi_est] = func_GMM(InitParams_new, score(train_indices, 1:2)');
 
 for k = 1:3
     mu_est_31d = coeff(:, 1:2) * mu_est(:, k);
     figure;
-    plot(mu_est_31d);
+    plot(mu_est_31d, "LineWidth", 2.5);
     xlabel('Time');
     ylabel('Voltage (µV)');
     title(sprintf('Canonical Spike Waveform for Cluster %d', k));
-    saveas(gcf, sprintf('ps7_2b_%d.png', k)); close all;
+    saveas(gcf, sprintf('ps7_2c_%d.png', k)); close all;
 end
+
+figure;
+hold on;
+plot(coeff(:, 1:2) * mu_est(:, 1), 'r');
+plot(coeff(:, 1:2) * mu_est(:, 2), 'g');
+plot(coeff(:, 1:2) * mu_est(:, 3), 'b');
+xlabel('Time');
+ylabel('Amplitude (µV)');
+title('Eigenvector Waveforms');
+legend('1st: red', '2nd: green', '3rd: blue');
+saveas(gcf, 'ps7_2c_other.png'); close all;

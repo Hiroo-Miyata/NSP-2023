@@ -44,6 +44,6 @@ for x = -Plen:step:Plen,
 end
 Contour1 = Contour1(1:count-1,:);
 Contour2 = [Contour1(1,:);Contour2(1:count-1,:);Contour1(count-1,:)];
-plot(M(1),M(2),'k+');
-plot(Contour1(:,1),Contour1(:,2),'k-','LineWidth',2);
-plot(Contour2(:,1),Contour2(:,2),'k-','LineWidth',2);
+plot(M(1),M(2),'r+');
+plot(Contour1(:,1),Contour1(:,2),'r-','LineWidth',2);
+plot(Contour2(:,1),Contour2(:,2),'r-','LineWidth',2);
