@@ -141,21 +141,23 @@ InitParams_new.pi = ones(1, 3) / 3;
 train_indices = samples_per_fold + 1 : n_samples;
 [mu_est, Sigma_est, pi_est] = func_GMM(InitParams_new, score(train_indices, 1:2)');
 
-for k = 1:3
-    mu_est_31d = coeff(:, 1:2) * mu_est(:, k);
-    figure;
-    plot(mu_est_31d, "LineWidth", 2.5);
-    xlabel('Time');
-    ylabel('Voltage (µV)');
-    title(sprintf('Canonical Spike Waveform for Cluster %d', k));
-    saveas(gcf, sprintf('ps7_2c_%d.png', k)); close all;
-end
+% for k = 1:3
+%     mu_est_31d = coeff(:, 1:2) * mu_est(:, k);
+%     figure;
+%     plot(mu_est_31d, "LineWidth", 2.5);
+%     xlabel('Time');
+%     ylabel('Voltage (µV)');
+%     title(sprintf('Canonical Spike Waveform for Cluster %d', k));
+%     saveas(gcf, sprintf('ps7_2c_%d.png', k)); close all;
+% end
+mu_est(1, :) = -1 * mu_est(1, :);
 
 figure;
 hold on;
-plot(coeff(:, 1:2) * mu_est(:, 1), 'r');
-plot(coeff(:, 1:2) * mu_est(:, 2), 'g');
-plot(coeff(:, 1:2) * mu_est(:, 3), 'b');
+% get the spike waveforms from the mu_est
+plot((mu_est(:, 1)' * coeff(:, 1:2)') + mean(Spikes, 2)', 'r');
+plot(mu_est(:, 2)' * coeff(:, 1:2)' + mean(Spikes, 2)', 'g');
+plot(mu_est(:, 3)' * coeff(:, 1:2)' + mean(Spikes, 2)', 'b');
 xlabel('Time');
 ylabel('Amplitude (µV)');
 title('Eigenvector Waveforms');
