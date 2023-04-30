@@ -2,14 +2,13 @@ clear all; close all;
 
 % Load the data
 load('ps8_data.mat');
-
-%% Define parameters
-[N, D] = size(Xsim);
+Xsim = Xsim';
+X = Xsim;
+[D, N] = size(X);
 M = 1;
+mu = mean(X,2);
+X = bsxfun(@minus,X,mu);
 
-% Normalize Xsim (DxN matrix)
-mu = mean(Xsim, 1);
-X = (Xsim - mu);
 
 % Initialize FA parameters
 W = rand(D, M);
@@ -21,24 +20,24 @@ for iter = 1:max_iter
     % E-step
     inv_Psi = inv(Psi);
     G = inv(eye(M) + W' * inv_Psi * W);
-    Ez = G * W' * inv_Psi * X';
-    Ezz = G + Ez * Ez';
-    
-    % M-step
-    W_new = X' * Ez' * inv(Ezz);
-    Psi_new = 1/N * diag(diag(X' * X - W_new * Ez * X));
-    % Update parameters
-    W = W_new;
-    Psi = Psi_new;
-    
+    U = chol(G);
+    WInvPsiX = W'*inv(Psi)*X;
+
     % Calculate log-likelihood
-    log_likelihood(iter) = -N*D/2*log(2*pi) - N/2*log(det(Psi + W'*W)) - 0.5 * trace(X * inv(Psi + W'*W) * X');
-    
-    
+    log_likelihood(iter) = -N*D/2*log(2*pi) - N/2*log(det(Psi + W'*W)) - 0.5 * trace(X' * inv(Psi + W'*W) * X);
     % Check convergence
     if iter > 1 && abs(log_likelihood(iter) - log_likelihood(iter-1)) < 1e-4
         break;
     end
+
+    Ez = G\(W'*inv(Psi)*X);
+    V = inv(U);
+    Ezz = N*(V*V')+Ez*Ez';
+    % M-step
+    U = chol(Ezz);
+    XEz = X*Ez';
+    W = (XEz/U)/U';
+    Psi = diag(diag((X*X' - W*Ez*X')/N));
 end
 
 % Plot the log data likelihood versus EM iteration
@@ -47,12 +46,13 @@ plot(log_likelihood);
 xlabel('EM iteration');
 ylabel('Log data likelihood');
 title('Log data likelihood vs EM iteration for FA');
+saveas(gcf, 'ps8_2e.png')
 
 % FA covariance
 FA_cov = W * W' + diag(Psi);
 
 % Check the covariances
-sample_cov = cov(Xsim);
+sample_cov = cov(X');
 disp('Sample covariance:');
 disp(sample_cov);
 disp('FA covariance:');
@@ -60,20 +60,18 @@ disp(FA_cov);
 
 % Plot the data points, mean, low-dimensional space, and projections
 figure;
-scatter(Xsim(:, 1), Xsim(:, 2), 'k.');
 hold on;
-scatter(mu(1), mu(2), 'go', 'LineWidth', 2);
-proj_line = [mu' - 3 * W, mu' + 3 * W];
-plot(proj_line(1, :), proj_line(2, :), 'k-');
-for i = 1:N
-x_n = Xsim(i, :);
-z_n = W' * (x_n - mu)';
-x_proj = (W * z_n)' + mu;
-scatter(x_proj(1), x_proj(2), 'r.');
-plot([x_n(1), x_proj(1)], [x_n(2), x_proj(2)], 'r-');
+scatter(Xsim(1,:), Xsim(2,:), 'k');
+scatter(mu(1), mu(2), 'g', 'filled', 'SizeData', 100);
+pc_start = mu - 5*W;
+pc_end = mu + 5*W;
+plot([pc_start(1), pc_end(1)], [pc_start(2), pc_end(2)], 'k', 'LineWidth', 2);
+Xsim_proj = (W * Ez) + mu;
+scatter(Xsim_proj(1,:), Xsim_proj(2,:), 'r', 'filled');
+for i = 1:size(Xsim,2)
+    plot([Xsim(1, i), Xsim_proj(1,i)], [Xsim(2,i), Xsim_proj(2,i)], 'r--');
 end
-xlabel('x1');
-ylabel('x2');
-title('FA data points, mean, low-dimensional space, and projections');
-legend({'Data points', 'Mean', 'Low-dimensional space', 'Projected points'}, 'Location', 'best');
-hold off;
+axis equal;
+legend('Data Points', 'Mean', 'PC Space', 'Projection', 'Projection Error', 'Location', 'Northwest');
+title('FA');
+saveas(gcf, 'ps8_2g.png')

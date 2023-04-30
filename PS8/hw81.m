@@ -12,9 +12,11 @@ V = V(:, idx);
 
 % (a) Plot eigenvalue spectrum
 lambda_sqrt = sqrt(lambda);
-plot(lambda_sqrt, 'bo-', 'LineWidth', 2);
+figure;
+plot(lambda_sqrt, 'ko', 'LineWidth', 1.5);
 xlabel('Index');
 ylabel('Square-rooted Eigenvalue');
+saveas(gcf, "1a.jpg")
 
 % Compute variance explained by top 3 principal components
 M = 3;
